@@ -17,12 +17,15 @@ de.attr("stroke", "none")
   .attr("fill", "grey");
 de.selectAll('path').on('mouseover', set_active)
                     .on('mouseout', set_inactive);
+
 de.select('#outline').style.eventHandler = "none";
 
 function set_active(d, i, nodes) {
   nodes[i].style.stroke = "black";
+  nodes[i].style.zIndex = 10;
 }
 
 function set_inactive(d, i, nodes) {
   nodes[i].style.stroke = "none";
+  nodes[i].style.zIndex = 0;
 }

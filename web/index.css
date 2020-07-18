@@ -4,7 +4,8 @@ svg {
 }
 
 svg path {
-  stroke-width: 1;
+  stroke: none;
+  stroke-width: 2;
   stroke-linejoin: round;
 }
 
