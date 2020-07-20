@@ -1,4 +1,17 @@
-svg {
+/* #linechartsvg {
+  background-color: lightgrey;
+  width: 600px;
+  height: 400px;
+} */
+
+.linepath {
+  stroke-width: 2px;
+  stroke-linecap: round;
+  mix-blend-mode: multiply;
+  fill: none;
+}
+
+/* svg {
   display: block;
   padding-bottom: 20px;
 }
@@ -7,7 +20,7 @@ svg path {
   stroke: none;
   stroke-width: 2;
   stroke-linejoin: round;
-}
+} */
 
 .slider {
   -webkit-appearance: none;

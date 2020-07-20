@@ -18,7 +18,7 @@ de.attr("stroke", "none")
 de.selectAll('path').on('mouseover', set_active)
                     .on('mouseout', set_inactive);
 
-de.select('#outline').style.eventHandler = "none";
+de.select('#outline').attr('pointer-events', 'none');
 
 function set_active(d, i, nodes) {
   nodes[i].style.stroke = "black";
