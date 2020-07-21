@@ -1,14 +1,28 @@
-/* #linechartsvg {
-  background-color: lightgrey;
-  width: 600px;
-  height: 400px;
-} */
-
 .linepath {
-  stroke-width: 2px;
   stroke-linecap: round;
   mix-blend-mode: multiply;
   fill: none;
+}
+
+[class^=axis-label] {
+  fill: black;
+  font-size: 20px;
+}
+
+.tick line {
+	stroke: #d3d3d3
+}
+
+.title {
+  font-size: 1.8em;
+}
+
+.legend:hover {
+  cursor: crosshair;
+}
+
+.d-dots {
+  opacity: 0.5;
 }
 
 /* svg {
