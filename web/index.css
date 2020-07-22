@@ -9,6 +9,10 @@
   font-size: 20px;
 }
 
+.axis-label-y:hover {
+  cursor: pointer;
+}
+
 .tick line {
 	stroke: #d3d3d3
 }
@@ -23,46 +27,4 @@
 
 .d-dots {
   opacity: 0.5;
-}
-
-/* svg {
-  display: block;
-  padding-bottom: 20px;
-}
-
-svg path {
-  stroke: none;
-  stroke-width: 2;
-  stroke-linejoin: round;
-} */
-
-.slider {
-  -webkit-appearance: none;
-  width: 591px;
-  height: 25px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-}
-
-.slider:hover {
-  opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 10px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 10px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
 }

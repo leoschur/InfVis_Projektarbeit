@@ -1,5 +1,6 @@
 const formatTime = d3.timeFormat("%d %b");
 const formatNumber = d3.format("~s");
+const columns = [""]
 
 var width = window.innerWidth,
   height = 500;
@@ -37,13 +38,7 @@ const remHighlight = () => {
     .attr('opacity', 1);
 }
 
-
-
 const renderer = data => {
-  const updateData = column => {
-
-  }
-
   // Create svg
   const svg = d3.select('#linechart')
     .append('svg')
@@ -67,18 +62,33 @@ const renderer = data => {
     .attr('height', innerHeight);
 
   // Group data
-  const comparator = (a, b) => {
+  const compareCases = (a, b) => {
     return d3.descending(a.values[a.values.length - 1].cases,
       b.values[b.values.length - 1].cases);
+  }
+  const compareDeaths = (a, b) => {
+    return d3.descending(a.values[a.values.length - 1].deaths,
+      b.values[b.values.length - 1].deaths);
+  }
+  const compareRecov = (a, b) => {
+    return d3.descending(a.values[a.values.length - 1].recovered,
+      b.values[b.values.length - 1].recovered);
   }
 
   const nestedData = d3.nest()
     .key(colorCode)
     .entries(data)
-    .sort(comparator); // TODO Comparator currently hardcoded for total cases
+    .sort(compareCases);
+  
+  var columnNames = [];
+  for (item in nestedData[0].values[0]) {
+    columnNames.push(item);
+  }
+  hideColumn = ["date", "state"];
+  columnNames = columnNames.filter(item => !hideColumn.includes(item));
 
   // Heading
-  const titel = "Covid-19 in Germany";
+  const titel = "Weekly Covid-19 Development in Germany";
   g.append('text')
     .attr('class', 'title')
     .attr('text-anchor', 'middle')
@@ -87,11 +97,11 @@ const renderer = data => {
     .text(titel);
   
   // Scaling
-  const stateList = nestedData.map(d => d.key);
+  var sortedStateList = nestedData.map(d => d.key);
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
-    .domain(stateList);
+    .domain(sortedStateList);
 
-  const yScale = d3.scaleLinear()
+  var yScale = d3.scaleLinear()
     .domain(d3.extent(data, yValue))
     .range([innerHeight, 0])
     .nice();
@@ -102,22 +112,43 @@ const renderer = data => {
     .range([0, innerWidth]);
 
     // Y-Axis
-  var yLabel = `Total ${column}`;
+  const updateYlabel = clicked => {
+    d3.selectAll('.axis-label-y')
+      .transition().duration(200)
+        .attr('opacity', 0.3);
+    d3.select(`#${clicked}`)
+      .transition().duration(500)
+        .attr('opacity', 1);
+    updateData(clicked);
+  }
+
   const yAxis = d3.axisLeft(yScale)
     .tickSize(-innerWidth)
-    .tickPadding(10);
+    .tickPadding(10)
+    .tickFormat(formatNumber);
   const Y = g.append('g')
-    .attr('id', 'Y')
-    .call(yAxis.tickFormat(formatNumber));
+    .attr('id', 'Y');
+  const yTicks = Y.append('g')
+    .attr('id', 'yTicks')
+    .call(yAxis);
   Y.selectAll('.domain').remove();
-  Y.append('text')
-    .attr('class', 'axis-label-y')
-    .text(yLabel)
-    .attr('x', -innerHeight/2)
-    .attr('y', -margin.left+20)
-    .attr('text-anchor', 'middle')
-    .attr('transform', 'rotate(-90)');
-  
+  Y.append('g')
+    .attr('id', 'yLabels')
+    .selectAll('text').data(columnNames)
+      .enter().append('text')
+        .attr('id', d => d)
+        .classed('axis-label-y', true)
+        .text(d => d)
+        .attr('x', (d, i) => { return (-innerHeight+100) + (100*i) })
+        .attr('y', -margin.left+20)
+        .attr('text-anchor', 'middle')
+        .attr('transform', 'rotate(-90)')
+        .attr('opacity', 0.3)
+        .on('click', d => updateYlabel(d));
+  Y.select('#cases')  // Set the first shown data to active
+    .transition().duration(1000)
+    .attr('opacity', 1);
+
   // X-Axis
   const xLabel = "Time";
   const xAxis = d3.axisBottom(xScale)
@@ -153,9 +184,9 @@ const renderer = data => {
         .attr('d', d => lineGenerator(d.values))
         .attr('stroke', d => colorScale(d.key))
         .attr('stroke-width', defStrokeW);
-
+  
   // Datapoints to show informationdensity
-  g.append('g')
+  const dots = g.append('g')
     .attr('id', 'data-dots')
     .selectAll('.data-dots').data(data)
       .enter().append('circle')
@@ -164,8 +195,40 @@ const renderer = data => {
         .attr('r', 1)
         .classed('d-dots', true);
 
+  // Updatefunction when usere selects different data to show
+  const updateData = column => {
+    // Figure out new ranking
+    var sortFor;
+    switch (column) {
+      case "cases": sortFor = compareCases; break;
+      case "deaths": sortFor = compareDeaths; break;
+      case "recovered": sortFor = compareRecov; break;
+      default: sortFor = compareCases;
+    }
+    nestedData.sort(sortFor);
+    sortedStateList = nestedData.map(d => d.key);
+
+    cl.selectAll('g')
+      .transition().duration(500)
+      .attr('transform', d => `translate(${0}, ${sortedStateList.indexOf(d) * innerHeight/16})`);
+
+    yValue = d => d[column];
+    yScale.domain(d3.extent(data, yValue));
+    yTicks
+      .transition().duration(1000)
+      .call(yAxis);
+    Y.selectAll('.domain').remove();
+
+    lines
+      .transition().duration(800)
+      .attr('d', d => lineGenerator(d.values))
+    dots
+      .transition().duration(800)
+      .attr('cy', d => yScale(yValue(d)))
+  }
+
   // Colorlegend
-  svg.append('g')
+  const cl = svg.append('g')
     .attr('transform', `translate(${margin.left + innerWidth + 20}, ${margin.top + 10})`)
     .attr('id', 'color-legend')
     .call(colorLegend, {
@@ -174,6 +237,12 @@ const renderer = data => {
       spacing: innerHeight/16,
       textOffset: 15
     }, highlighter, remHighlight)
+  
+  const reorderColorlegend = order => {
+    cl.selectAll('g')
+      .transition().duration(600)
+      .attr('transform', (d, i) => `translate(0, ${i * spacing})`);
+  }
 }
 
 
@@ -184,8 +253,7 @@ d3.csv("data/rki_slim_cum_test.csv", function(d) {
     state: d.Bundesland,
     cases: +d.AnzahlFall,
     deaths: +d.AnzahlTodesfall,
-    recovered: +d.AnzahlGenesen,
-    acute: +d.AnzahlFall - +d.AnzahlTodesfall - +d.AnzahlGenesen // TODO doesn´t work with cumultated numbers
+    recovered: +d.AnzahlGenesen
   };
 }).then(data => {
   renderer(data);
