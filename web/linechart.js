@@ -1,18 +1,18 @@
 const formatTime = d3.timeFormat("%d %b");
 const formatNumber = d3.format("~s");
-const columns = [""]
 
-var width = window.innerWidth,
+const
+  width = window.innerWidth,
   height = 500;
 
-const defStrokeW = 2;
+const defaultStrokeW = 2;
 
-
+// Functions to highlight and unhighlight certain states (called by Eventlisteners)
 const highlighter = lineId => {
   d3.selectAll('.linepath')
     .transition()
     .duration(300)
-    .attr('stroke-width', defStrokeW)
+    .attr('stroke-width', defaultStrokeW)
     .attr('opacity', 0.2);
   d3.selectAll('.legend')
     .transition()
@@ -25,12 +25,11 @@ const highlighter = lineId => {
   .attr('stroke-width', 4)
   .attr('opacity', 1);
 }
-
 const remHighlight = () => {
   d3.selectAll('.linepath')
     .transition()
     .duration(400)
-    .attr('stroke-width', defStrokeW)
+    .attr('stroke-width', defaultStrokeW)
     .attr('opacity', 1);
   d3.selectAll('.legend')
     .transition()
@@ -38,20 +37,23 @@ const remHighlight = () => {
     .attr('opacity', 1);
 }
 
+// Actual renderer of the svg graphic (called after csv-file is loaded)
 const renderer = data => {
-  // Create svg
+  // ********** Create svg **********
   const svg = d3.select('#linechart')
     .append('svg')
       .attr('width', width)
       .attr('height', height);
 
-  // Datagetter
+  
+  // ********** Datagetter **********
   const column = "cases";
   const xValue = d => d.date;
   var yValue = d => d.cases;
   const colorCode = d => d.state;
 
-  // Dimensions
+
+  // ********** Dimensions **********
   const margin = { top:50, right: 240, bottom: 55, left: 60 };
   const innerWidth = width - (margin.left + margin.right);
   const innerHeight = height - (margin.top + margin.bottom);
@@ -61,7 +63,8 @@ const renderer = data => {
     .attr('width', innerWidth)
     .attr('height', innerHeight);
 
-  // Group data
+  
+  // ********** Group data **********
   const compareCases = (a, b) => {
     return d3.descending(a.values[a.values.length - 1].cases,
       b.values[b.values.length - 1].cases);
@@ -87,7 +90,8 @@ const renderer = data => {
   hideColumn = ["date", "state"];
   columnNames = columnNames.filter(item => !hideColumn.includes(item));
 
-  // Heading
+
+  // ********** Heading **********
   const titel = "Weekly Covid-19 Development in Germany";
   g.append('text')
     .attr('class', 'title')
@@ -96,7 +100,8 @@ const renderer = data => {
     .attr('x', innerWidth/2)
     .text(titel);
   
-  // Scaling
+  
+  // ********** Scalings **********
   var sortedStateList = nestedData.map(d => d.key);
   const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
     .domain(sortedStateList);
@@ -111,7 +116,8 @@ const renderer = data => {
     .domain(dateRange)
     .range([0, innerWidth]);
 
-    // Y-Axis
+  
+  // ********** Y-Axis **********
   const updateYlabel = clicked => {
     d3.selectAll('.axis-label-y')
       .transition().duration(200)
@@ -149,7 +155,8 @@ const renderer = data => {
     .transition().duration(1000)
     .attr('opacity', 1);
 
-  // X-Axis
+  
+  // ********** X-Axis **********
   const xLabel = "Time";
   const xAxis = d3.axisBottom(xScale)
     .tickSize(-innerHeight)
@@ -170,6 +177,9 @@ const renderer = data => {
     .attr('x', innerWidth/2)
     .attr('y', margin.bottom);
 
+  
+  // ********** Visualize the actual Data **********
+
   // Datalines
   const lineGenerator = d3.line()
     .x(d => xScale(xValue(d)))
@@ -183,7 +193,7 @@ const renderer = data => {
         .attr('class', 'linepath')
         .attr('d', d => lineGenerator(d.values))
         .attr('stroke', d => colorScale(d.key))
-        .attr('stroke-width', defStrokeW);
+        .attr('stroke-width', defaultStrokeW);
   
   // Datapoints to show informationdensity
   const dots = g.append('g')
@@ -195,9 +205,22 @@ const renderer = data => {
         .attr('r', 1)
         .classed('d-dots', true);
 
-  // Updatefunction when usere selects different data to show
+  
+  // ********** Colorlegend **********
+  const cl = svg.append('g')
+    .attr('transform', `translate(${margin.left + innerWidth + 20}, ${margin.top + 10})`)
+    .attr('id', 'color-legend')
+    .call(colorLegend, {
+      colorScale,
+      circleRadius: 10,
+      spacing: innerHeight/16,
+      textOffset: 15
+    }, highlighter, remHighlight);
+
+  
+  // ********** Updatefunction when usere selects different data to show **********
   const updateData = column => {
-    // Figure out new ranking
+    // Figure out new ranking for the color legend
     var sortFor;
     switch (column) {
       case "cases": sortFor = compareCases; break;
@@ -207,41 +230,28 @@ const renderer = data => {
     }
     nestedData.sort(sortFor);
     sortedStateList = nestedData.map(d => d.key);
-
+    // Resort the color legend
     cl.selectAll('g')
       .transition().duration(500)
       .attr('transform', d => `translate(${0}, ${sortedStateList.indexOf(d) * innerHeight/16})`);
 
+    // Redefine the datagetter
     yValue = d => d[column];
+
+    // Fit Y scale
     yScale.domain(d3.extent(data, yValue));
     yTicks
       .transition().duration(1000)
       .call(yAxis);
     Y.selectAll('.domain').remove();
 
+    // Fit lines and dots
     lines
       .transition().duration(800)
       .attr('d', d => lineGenerator(d.values))
     dots
       .transition().duration(800)
       .attr('cy', d => yScale(yValue(d)))
-  }
-
-  // Colorlegend
-  const cl = svg.append('g')
-    .attr('transform', `translate(${margin.left + innerWidth + 20}, ${margin.top + 10})`)
-    .attr('id', 'color-legend')
-    .call(colorLegend, {
-      colorScale,
-      circleRadius: 10,
-      spacing: innerHeight/16,
-      textOffset: 15
-    }, highlighter, remHighlight)
-  
-  const reorderColorlegend = order => {
-    cl.selectAll('g')
-      .transition().duration(600)
-      .attr('transform', (d, i) => `translate(0, ${i * spacing})`);
   }
 }
 
