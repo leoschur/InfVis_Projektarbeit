@@ -257,7 +257,7 @@ const renderer = data => {
 
 
 // open data
-d3.csv("data/rki_slim_cum_test.csv", function(d) {
+d3.csv("data/rki_slim_cum.csv", function(d) {
   return{
     date: new Date(+d.Refdatum),
     state: d.Bundesland,
